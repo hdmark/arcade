@@ -18,18 +18,24 @@
 export default {
   name: "home",
   data: function() {
+    // TODO - chase the cursor, allow the cursor to move by more than 1 or 2, maybe jump 10 at a time?
     return {
       mapHeight: 500,
       mapWidth: 500,
-      canvasHeight: "500",
+      canvasHeight: "300",
       canvasWidth: "500",
       canvasStartX: 0,
       canvasStartY: 0,
+      angleStep: 2,
       bodySize: 10,
+      cursor: { x: -1, y: -1 },
       moveDist: 1,
+      turning: false,
+      direction: "",
       score: 0,
       canvas: null,
       ctx: null,
+      moveAngle: 0,
       moveDir: "ArrowDown",
       impactLoc: { x: -1, y: -1 },
       food: { x: -1, y: -1 },
@@ -47,7 +53,15 @@ export default {
     }
   },
   components: {},
+
   methods: {
+    turn(dir) {
+      if (dir == "CCW") {
+        this.moveAngle = (359 + this.moveAngle - this.angleStep) % 359;
+      } else if (dir == "CW") {
+        this.moveAngle = (this.moveAngle + this.angleStep) % 359;
+      }
+    },
     start() {
       // intialize
       this.body = [
@@ -177,7 +191,6 @@ export default {
       }
     },
     moveBody() {
-      console.log("move body");
       for (let i = this.body.length - 1; i > 0; i--) {
         let xMod = 0;
         let yMod = 0;
@@ -305,36 +318,46 @@ export default {
         this.moveBody();
       }
 
+      if (this.turning == true) {
+        this.turn(this.direction);
+      }
       this.body[0].dir = this.moveDir;
 
-      switch (this.moveDir) {
-        case "ArrowDown":
-          this.canvasStartY += this.moveDist;
-          this.body[0].y += this.moveDist;
-          // this.moveCanvas(0,-this.bodySize)
+      let dX = Math.cos((this.moveAngle * Math.PI) / 180);
+      let dY = Math.sin((this.moveAngle * Math.PI) / 180);
+      this.body[0].y += dY;
+      this.body[0].x += dX;
+      this.canvasStartY += dY;
+      this.canvasStartX += dX;
 
-          break;
-        case "ArrowLeft":
-          this.canvasStartX -= this.moveDist;
-          this.body[0].x -= this.moveDist;
-          //this.ctx.translate(this.bodySize, 0);
+      // switch (this.moveDir) {
+      //   case "ArrowDown":
+      //     this.canvasStartY += this.moveDist;
+      //     this.body[0].y += this.moveDist;
+      //     // this.moveCanvas(0,-this.bodySize)
 
-          break;
-        case "ArrowUp":
-          this.canvasStartY -= this.moveDist;
-          this.body[0].y -= this.moveDist;
-          //this.ctx.translate(0, this.bodySize);
+      //     break;
+      //   case "ArrowLeft":
+      //     this.canvasStartX -= this.moveDist;
+      //     this.body[0].x -= this.moveDist;
+      //     //this.ctx.translate(this.bodySize, 0);
 
-          break;
-        case "ArrowRight":
-          this.canvasStartX += this.moveDist;
-          this.body[0].x += this.moveDist;
-          //this.ctx.translate(-this.bodySize, 0);
+      //     break;
+      //   case "ArrowUp":
+      //     this.canvasStartY -= this.moveDist;
+      //     this.body[0].y -= this.moveDist;
+      //     //this.ctx.translate(0, this.bodySize);
 
-          break;
-        default:
-          break;
-      }
+      //     break;
+      //   case "ArrowRight":
+      //     this.canvasStartX += this.moveDist;
+      //     this.body[0].x += this.moveDist;
+      //     //this.ctx.translate(-this.bodySize, 0);
+
+      //     break;
+      //   default:
+      //     break;
+      // }
 
       //move
       // this.ctx.setTransform(1, 0, 0, 1, -this.canvasStartX, -this.canvasStartY);
@@ -348,20 +371,88 @@ export default {
   mounted() {
     this.canvas = this.$refs.canvas;
     this.ctx = this.canvas.getContext("2d");
+    let stop;
+    window.addEventListener("keyup", () => {
+      this.turning = false;
+    });
     window.addEventListener("keydown", e => {
       if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        if (
-          (e.key == "ArrowDown" || e.key == "ArrowUp") &&
-          (this.moveDir == "ArrowDown" || this.moveDir == "ArrowUp")
-        ) {
-        } else if (
-          (e.key == "ArrowLeft" || e.key == "ArrowRight") &&
-          (this.moveDir == "ArrowLeft" || this.moveDir == "ArrowRight")
-        ) {
-        } else {
-          this.moveDir = e.key;
+        let angleStep = 10;
+
+        //stop = setInterval(() => {
+        switch (e.key) {
+          // case "ArrowUp":
+          //   console.log(this.moveAngle);
+
+          //   // right half
+          //   if (this.moveAngle < 90 || this.moveAngle > 270) {
+          //     this.moveAngle = (360 + this.moveAngle - angleStep) % 360;
+          //   } else if (this.moveAngle == 270) {
+          //   } else {
+          //     this.moveAngle += angleStep;
+          //   }
+
+          //   break;
+          // case "ArrowDown":
+          //   // right half
+          //   if (this.moveAngle < 90 || this.moveAngle > 270) {
+          //     this.moveAngle = (360 + this.moveAngle + angleStep) % 360;
+          //   } else if (this.moveAngle == 90) {
+          //   } else {
+          //     this.moveAngle -= angleStep;
+          //   }
+          //   break;
+          case "ArrowLeft":
+            // CCW
+            this.turning = true;
+            this.direction = "CCW";
+            // this.moveAngle = (360 + this.moveAngle - angleStep) % 359;
+            // // bottom half
+            // if (this.moveAngle < 180) {
+            //   this.moveAngle = (360 + this.moveAngle + angleStep) % 360;
+            // } else if (this.moveAngle == 180) {
+            // } else {
+            //   this.moveAngle -= angleStep;
+            // }
+            break;
+          case "ArrowRight":
+            // CW
+            this.turning = true;
+            this.direction = "CW";
+            //this.moveAngle = (360 + this.moveAngle + angleStep) % 359;
+
+            // // bottom half
+            // if (this.moveAngle < 180 && this.moveAngle > 0) {
+            //   this.moveAngle = (360 + this.moveAngle - angleStep) % 360;
+            // } else if (this.moveAngle == 0) {
+            //   // top half
+            // } else {
+            //   this.moveAngle = (360 + this.moveAngle + angleStep) % 360;
+            // }
+            break;
+
+          default:
+            break;
         }
+        //}, 5);
       }
+      // window.addEventListener("keyup", () => {
+      //   clearInterval(stop);
+      // });
+      console.log(this.moveAngle);
+
+      //   if (
+      //     (e.key == "ArrowDown" || e.key == "ArrowUp") &&
+      //     (this.moveDir == "ArrowDown" || this.moveDir == "ArrowUp")
+      //   ) {
+      //   } else if (
+      //     (e.key == "ArrowLeft" || e.key == "ArrowRight") &&
+      //     (this.moveDir == "ArrowLeft" || this.moveDir == "ArrowRight")
+      //   ) {
+      //   } else {
+      //     this.moveDir = e.key;
+      //   }
+      // }
     });
   }
 };
