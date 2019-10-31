@@ -19,8 +19,8 @@ export default {
   name: "home",
   data: function() {
     return {
-      mapHeight: 800,
-      mapWidth: 800,
+      mapHeight: 500,
+      mapWidth: 500,
       canvasHeight: "500",
       canvasWidth: "500",
       canvasStartX: 0,
@@ -34,7 +34,7 @@ export default {
       impactLoc: { x: -1, y: -1 },
       food: { x: -1, y: -1 },
       gameActive: false,
-      body: [{ x: 0, y: 0, color: "red" }],
+      body: [{ x: 0, y: 0, color: "red", dir: "ArrowDown" }],
       colors: ["red", "orange", "yellow", "green", "blue", "indigo", "violet"]
     };
   },
@@ -51,8 +51,18 @@ export default {
     start() {
       // intialize
       this.body = [
-        { x: this.mapWidth / 2, y: this.mapHeight / 2, color: "red" }
+        {
+          x: this.mapWidth / 2,
+          y: this.mapHeight / 2,
+          color: "red",
+          dir: "ArrowDown"
+        }
       ];
+      // this.add();
+      // this.add();
+      // this.add();
+      // this.add();
+      // this.add();
       this.moveDir = "ArrowDown";
       this.gameActive = true;
       this.placeFood();
@@ -74,8 +84,29 @@ export default {
       this.food.x = this.getRandomLoc(this.mapWidth);
       this.food.y = this.getRandomLoc(this.mapHeight);
     },
-    add() {
-      this.body.push({ x: this.body[0].x, y: this.body[0].y });
+    async add() {
+      let xMod = 0;
+      let yMod = 0;
+      let last = this.body[this.body.length - 1];
+
+      switch (last.dir) {
+        case "ArrowUp":
+          yMod = this.bodySize;
+          break;
+        case "ArrowDown":
+          yMod = -this.bodySize;
+          break;
+        case "ArrowLeft":
+          xMod = this.bodySize;
+          break;
+        case "ArrowRight":
+          xMod = -this.bodySize;
+          break;
+
+        default:
+          break;
+      }
+      this.body.push({ x: last.x + 0.1, y: last.y + 0.1 });
       this.score++;
     },
 
@@ -146,23 +177,97 @@ export default {
       }
     },
     moveBody() {
+      console.log("move body");
       for (let i = this.body.length - 1; i > 0; i--) {
-        this.body[i].x = this.body[i - 1].x;
-        this.body[i].y = this.body[i - 1].y;
+        let xMod = 0;
+        let yMod = 0;
+        let last = this.body[i - 1];
+        let cur = this.body[i];
+        let dY = last.y - cur.y;
+        let dX = last.x - cur.x;
+
+        let dZ = Math.sqrt(dY ** 2 + dX ** 2);
+        let theta = Math.atan(dY / dX);
+        xMod = Math.cos(theta) * (dZ - this.bodySize);
+        yMod = Math.sin(theta) * (dZ - this.bodySize);
+
+        if (dX < 0) {
+          xMod *= -1;
+          yMod *= -1;
+        }
+        // if (cur.x > last.x) {
+        //   xMod *= -1;
+        // }
+        // if (last.x == cur.x) {
+        //   if (cur.y < last.y - 10) {
+        //     yMod = 1;
+        //   } else if (cur.y > last.y + 10) {
+        //     yMod = -1;
+        //   } else if (cur.x < last.x - 10) {
+        //     xMod = 1;
+        //   } else if (cur.x > last.x + 10) {
+        //     xMod = -1;
+        //   }
+        // }
+        // if (last.y == cur.y) {
+        //   yMod = cur.y > last.y ? -1 : cur.y < last.y ? 1 : 0;
+        // } else if (last.y == cur.y) {
+        //   xMod = cur.x > last.x ? -1 : cur.x < last.x ? 1 : 0;
+        // } else {
+        //   xMod = cur.x > last.x ? -1 : cur.x < last.x ? 1 : 0;
+        //   yMod = cur.y > last.y ? -1 : cur.y < last.y ? 1 : 0;
+        // }
+
+        // xMod = cur.x > last.x ? -1 : cur.x < last.x ? 1 : 0;
+        // yMod = cur.y > last.y ? -1 : cur.y < last.y ? 1 : 0;
+
+        // switch (cur.dir) {
+        //   case "ArrowUp":
+        //     if (cur.y > last.y + 10) {
+        //       yMod = -1;
+        //     }
+        //     xMod = cur.x > last.x ? -1 : cur.x < last.x ? 1 : 0;
+        //     break;
+        //   case "ArrowDown":
+        //     if (cur.y < last.y - 10) {
+        //       yMod = 1;
+        //     }
+        //     xMod = cur.x > last.x ? -1 : cur.x < last.x ? 1 : 0;
+        //     break;
+        //   case "ArrowLeft":
+        //     if (cur.x > last.x + 10) {
+        //       xMod = -1;
+        //     }
+        //     yMod = cur.y > last.y ? -1 : cur.y < last.y ? 1 : 0;
+        //     break;
+        //   case "ArrowRight":
+        //     if (cur.x < last.x - 10) {
+        //       xMod = 1;
+        //     }
+        //     yMod = cur.y > last.y ? -1 : cur.y < last.y ? 1 : 0;
+
+        //     break;
+
+        //   default:
+        //     break;
+        // }
+        this.body[i].x += xMod;
+        this.body[i].y += yMod;
         this.body[i].color = this.colors[i % 7];
+        this.body[i].dir = this.body[i - 1].dir;
       }
     },
     checkPosition() {
       // check for loss
-      for (let b of this.body.slice(1, this.body.length)) {
-        if (this.body[0].x == b.x && this.body[0].y == b.y) {
-          console.log("LOSS");
-          this.$timer.stop("moveHead");
-          this.impactLoc.x = this.body[0].x;
-          this.impactLoc.y = this.body[0].y;
-          this.gameActive = false;
-        }
-      }
+      // for (let b of this.body.slice(1, this.body.length)) {
+      //   if (this.body[0].x == b.x && this.body[0].y == b.y) {
+      //     console.log("LOSS");
+      //     this.$timer.stop("moveHead");
+      //     this.impactLoc.x = this.body[0].x;
+      //     this.impactLoc.y = this.body[0].y;
+      //     this.gameActive = false;
+      //   }
+      // }
 
       // check for boundaries
       if (
@@ -180,10 +285,10 @@ export default {
 
       // check for eating
       if (
-        this.body[0].x > this.food.x - this.bodySize / 2 &&
-        this.body[0].x < this.food.x + this.bodySize * 1.5 &&
-        this.body[0].y > this.food.y - this.bodySize / 2 &&
-        this.body[0].y < this.food.y + this.bodySize * 1.5
+        this.body[0].x > this.food.x - this.bodySize * 2 &&
+        this.body[0].x < this.food.x + this.bodySize * 3 &&
+        this.body[0].y > this.food.y - this.bodySize * 2 &&
+        this.body[0].y < this.food.y + this.bodySize * 3
       ) {
         // eat the food
         this.add();
@@ -199,10 +304,12 @@ export default {
       if (this.body.length > 0) {
         this.moveBody();
       }
+
+      this.body[0].dir = this.moveDir;
+
       switch (this.moveDir) {
         case "ArrowDown":
           this.canvasStartY += this.moveDist;
-
           this.body[0].y += this.moveDist;
           // this.moveCanvas(0,-this.bodySize)
 
@@ -243,7 +350,17 @@ export default {
     this.ctx = this.canvas.getContext("2d");
     window.addEventListener("keydown", e => {
       if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        this.moveDir = e.key;
+        if (
+          (e.key == "ArrowDown" || e.key == "ArrowUp") &&
+          (this.moveDir == "ArrowDown" || this.moveDir == "ArrowUp")
+        ) {
+        } else if (
+          (e.key == "ArrowLeft" || e.key == "ArrowRight") &&
+          (this.moveDir == "ArrowLeft" || this.moveDir == "ArrowRight")
+        ) {
+        } else {
+          this.moveDir = e.key;
+        }
       }
     });
   }
