@@ -145,6 +145,7 @@ export default {
       if (this.body.length > 0) {
         this.moveBody();
       }
+
       switch (this.moveDir) {
         case "ArrowDown":
           this.body[0].y += this.bodySize;
@@ -171,7 +172,26 @@ export default {
     this.ctx = this.canvas.getContext("2d");
     window.addEventListener("keydown", e => {
       // this.moveHead(e.key);
-      this.moveDir = e.key;
+      if ([37, 38, 39, 40].includes(e.keyCode)) {
+        switch (e.keyCode) {
+          case 37:
+            this.moveDir = "ArrowLeft";
+            break;
+          case 39:
+            this.moveDir = "ArrowRight";
+            break;
+          case 38:
+            this.moveDir = "ArrowUp";
+            break;
+          case 40:
+            this.moveDir = "ArrowDown";
+            break;
+
+          default:
+            break;
+        }
+      }
+      // this.moveDir = e.keyCode;
     });
   }
 };
